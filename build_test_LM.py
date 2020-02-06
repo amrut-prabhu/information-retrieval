@@ -38,21 +38,26 @@ def build_LM(in_file):
     f = open(in_file, mode='r', encoding='utf8')
     for line in f:
         line = line.strip() # To remove newline characters and other whitespace characters at the left and right ends of the string
-        start = line.find(' ') + 1 # Start of the training data sentence
+        start = line.find(' ') + 1 # Start index of the training data sentence
 
         language = line[:start - 1]
         sentence = line[start:]
 
         for i in range(len(sentence) - N + 1):
             ngram = sentence[i:i + N]
-
-            LM[language].setdefault(ngram, 0) # Add to dict, if not present # TODO: Add sommthing?
+            
+            for lang in numTokens:
+                if ngram not in LM[lang]:
+                    LM[lang][ngram] = 1 # Add-one smoothing
+                    numTokens[lang] += 1
+            
             LM[language][ngram] += 1
 
             numTokens[language] += 1
 
     f.close()
 
+    # Normalise ngram counts into probabilities
     for lang in LM:
         for ngram in LM[lang]:
             LM[lang][ngram] /= numTokens[lang] 
@@ -85,7 +90,7 @@ def test_LM(in_file, out_file, LM):
 
             for i in range(3):
                 if ngram in LM[pred_labels[i]]:
-                    probs[i] += math.log10(LM[pred_labels[i]][ngram])
+                    probs[i] += math.log(LM[pred_labels[i]][ngram]) # Use log to prevent value from being extremely small
                     count[i] += 1
 
         if max(probs) == 0:
