@@ -76,25 +76,30 @@ def test_LM(in_file, out_file, LM):
     f_in = open(in_file, mode='r', encoding='utf8')
     f_out = open(out_file, mode='w', encoding='utf8')
 
+    threshold = 0.55 # Threshold for percentage of recognised words, below which the sentence is classified as "other"
+
     pred_labels = ['malaysian', 'indonesian', 'tamil']
     for line in f_in:
         sentence = line.strip()
 
-        count = [0, 0, 0] 
-
         # Probabilities of sentence being malaysian, indonesian and tamil
         probs = [0, 0, 0] 
-
+        # Number of ngrams with non-zero probabilities 
+        num_counted = 0
+        
         for i in range(len(sentence) - N + 1):
             ngram = sentence[i:i + N]
 
-            for i in range(3):
-                if ngram in LM[pred_labels[i]]:
-                    probs[i] += math.log(LM[pred_labels[i]][ngram]) # Use log to prevent value from being extremely small
-                    count[i] += 1
+            for j in range(len(LM)):
+                if ngram in LM[pred_labels[j]]:
+                    probs[j] += math.log(LM[pred_labels[j]][ngram]) # Use log to prevent value from being extremely small
+                    num_counted += 1 
+                    
+        num_ngrams_known = num_counted / len(LM) # Since they're counted multiple times (once for each of the LMs, due to smmothing)
+        num_ngrams_total = i + 1
 
-        if max(probs) == 0:
-            predicted_lang = 'other'
+        if num_ngrams_known / num_ngrams_total <= threshold: 
+            predicted_lang = 'other' # If lot of unknown words, predict language as "other"
         else:
             predicted_lang = pred_labels[probs.index(max(probs))] # Select the label that has highest probability
 
