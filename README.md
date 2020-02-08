@@ -11,6 +11,12 @@ python build_test_LM.py -b temp.txt -t input.test.txt -o input.out.txt
 python build_test_LM.py -b input.train.txt -t input.test.txt -o input.out.txt
 ```
 
+To run the script to test on the validation data set:
+
+```sh
+python build_validation_LM.py -b input.train.txt -t input.validation.txt -o input.out.txt
+```
+
 ## Evaluation
 
 ```sh
