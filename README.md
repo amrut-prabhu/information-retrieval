@@ -6,8 +6,6 @@
 python build_test_LM.py -b input-file-for-building-LM -t input-file-for-testing-LM -o output-file
 
 # Example
-python build_test_LM.py -b temp.txt -t input.test.txt -o input.out.txt
-
 python build_test_LM.py -b input.train.txt -t input.test.txt -o input.out.txt
 ```
 

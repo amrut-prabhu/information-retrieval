@@ -38,25 +38,8 @@ def build_LM(in_file):
         'tamil': 0,
     }
 
-    #### Create validation set
-    num_lines = sum(1 for line in open(in_file, mode='r', encoding='utf8'))
-
-    num_validation = int(0.2 * num_lines)
-    validation_idx = set()
-
-    seed(1)
-    for _ in range(num_validation):
-        value = randint(0, num_lines)
-
-        while str(value) in validation_idx:
-            value = randint(0, num_lines)
-
-        validation_idx.add(str(value))
-    ####
-
     f = open(in_file, mode='r', encoding='utf8')
 
-    validation_data = []
     i = -1
     for line in f:
         line = line.strip() # To remove newline characters and other whitespace characters at the left and right ends of the string
@@ -64,11 +47,6 @@ def build_LM(in_file):
 
         language = line[:start - 1]
         sentence = line[start:]
-
-        i += 1
-        if str(i) in validation_idx:
-            validation_data.append((language, sentence))
-            continue
 
         for i in range(len(sentence) - N + 1):
             ngram = sentence[i:i + N]
@@ -89,7 +67,7 @@ def build_LM(in_file):
         for ngram in LM[lang]:
             LM[lang][ngram] /= numTokens[lang] 
 
-    return LM, validation_data
+    return LM
 
 
 def validate_LM(in_file, out_file, LM):
@@ -97,16 +75,17 @@ def validate_LM(in_file, out_file, LM):
 
     f_out = open(out_file, mode='w', encoding='utf8')
 
-    num_lines = 0
-
     pred_labels = ['malaysian', 'indonesian', 'tamil']
 
+    # Test threshold values from [0, 0.90] in increments of 0.05
     for k in range(0, 90, 5):
         threshold = k / 100
 
         f_in = open(in_file, mode='r', encoding='utf8')
+        line_num = 0
 
-        correct_pred = 0
+        correct_pred = 0 # Number of sentences classified correctly, using the current `threshold` value
+
         for line in f_in:
             line = line.strip()
             start = line.find(' ') + 1
@@ -114,30 +93,42 @@ def validate_LM(in_file, out_file, LM):
             lang = line[:start - 1]
             sentence = line[start:]
 
+            line_num += 1
+
             # Probabilities of sentence being malaysian, indonesian and tamil
             probs = [0, 0, 0] 
             num_counted = 0
+
             for i in range(len(sentence) - N + 1):
                 ngram = sentence[i:i + N]
 
                 for j in range(3):
                     if ngram in LM[pred_labels[j]]:
                         probs[j] += math.log(LM[pred_labels[j]][ngram]) # Use log to prevent value from being extremely small
-                        num_counted += 1
+                        num_counted += 1 
 
-            if num_counted / i <= threshold: # If lot of unknown words, predict language as "other"
-                predicted_lang = 'other'
+            num_ngrams_known = num_counted / len(LM) # Since they're counted multiple times (once for each of the LMs, due to smmothing)
+            num_ngrams_total = i + 1
+            
+            if num_ngrams_known / num_ngrams_total <= threshold: 
+                predicted_lang = 'other' # If lot of unknown words, predict language as "other"
             else:
                 predicted_lang = pred_labels[probs.index(max(probs))] # Select the label that has highest probability
+
 
             if predicted_lang == lang:
                 correct_pred += 1
 
-            if k == 60:
-                f_out.write(predicted_lang + " " + line + "\n")
-                num_lines += 1
 
-        print(str(threshold) + ": " + str(correct_pred))
+            if k == 55:
+                f_out.write(predicted_lang + " " + line + "\n")
+
+                if lang == "other":
+                    # See percentage of known ngrams for sentences that are actually "other" 
+                    print("  known in " + str(line_num) + ": " + str(num_ngrams_known / num_ngrams_total * 100) + "%") 
+
+
+        print("# correct for threshold=" + str(threshold) + ":  " + str(correct_pred))
         f_in.close()
 
     f_out.close()
@@ -166,6 +157,5 @@ if input_file_b == None or input_file_t == None or output_file == None:
     usage()
     sys.exit(2)
 
-LM, validation_data = build_LM(input_file_b)
-
+LM = build_LM(input_file_b)
 validate_LM(input_file_t, output_file, LM)
