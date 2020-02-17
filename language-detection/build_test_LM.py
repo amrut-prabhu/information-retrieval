@@ -46,7 +46,7 @@ def build_LM(in_file):
         for i in range(len(sentence) - N + 1):
             ngram = sentence[i:i + N]
             
-            for lang in numTokens:
+            for lang in LM:
                 if ngram not in LM[lang]:
                     LM[lang][ngram] = 1 # Add-one smoothing
                     numTokens[lang] += 1
