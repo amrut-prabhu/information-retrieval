@@ -1,0 +1,5 @@
+output.txt
+*.json
+postings_order.txt
+postings.json
+_pycache_/
