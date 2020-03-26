@@ -108,7 +108,6 @@ def perform_search_query(query, dictionary, postings_fo):
         return -doc_score[1], doc_score[0]
 
     search_results = heapq.nsmallest(K, doc_scores.items(), key=sort_key)
-
     return map(lambda x: x[0], search_results)
 
 

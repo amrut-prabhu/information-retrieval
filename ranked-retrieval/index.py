@@ -81,7 +81,7 @@ def create_postings_lists(in_dir):
     postings_lists = {} 
 
     stemmer = nltk.stem.porter.PorterStemmer()
-    files = get_sorted_file_names(in_dir) # Get sorted names, since postings list should have sorted doc IDs
+    files = get_sorted_file_names(in_dir)
 
     for doc_id in files:
         file_path = os.path.join(in_dir, str(doc_id))
