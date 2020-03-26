@@ -35,11 +35,28 @@ def log10(x):
     return 0
 
 
-def add_doc_tf_to_postings(doc_id, doc_tfs, doc_length, postings_lists):
+def get_document_vector_length(doc_tfs):
     """
-    Updates the postings lists by adding the doc ID and normalized term frequency weights
-    to the postings of word types.
+    Returns the L2 norm of the document vector using weighted term frequencies.
+
+    Input:
+        doc_tfs: Raw term frequency counts for this document { word_type: tf }
     """
+    return math.sqrt(sum(map(lambda kv: pow(1 + log10(kv[1]), 2), doc_tfs.items())))
+
+
+def add_doc_tf_to_postings(doc_id, doc_tfs, postings_lists):
+    """
+    Updates the postings lists by adding the doc ID and normalized term 
+    frequency weights to the postings of word types.
+
+    Input:
+        doc_id: Document ID
+        doc_tfs: Raw term frequencies for the word types in this document
+        postings_lists: Postings lists with all word types
+    """
+    doc_length = get_document_vector_length(doc_tfs)
+
     for word_type, raw_tf in doc_tfs.items(): 
         n_wt = (1 + log10(raw_tf)) / doc_length
 
@@ -48,27 +65,17 @@ def add_doc_tf_to_postings(doc_id, doc_tfs, doc_length, postings_lists):
         postings_lists[word_type].append((doc_id, n_wt))
 
 
-def get_document_vector_length(doc_tfs):
-    """
-    Returns the L2 norm of the document vector represented by doc_tfs.
-
-    Input:
-        doc_tfs: Raw term frequency counts for this document. { word_type: tf }
-    """
-    return math.sqrt(sum(map(lambda kv: pow(1 + log10(kv[1]), 2), doc_tfs.items())))
-
-
 def create_postings_lists(in_dir):
     """
     Returns the postings lists created from the documents in `in_dir`.
     Applies sentence and word level tokenisation, stemming and case folding.
 
     Input:
-        in_dir:
+        in_dir: Directory containing the documents in the collection.
 
     Output:
-        postings_lists:
-        collection_size:
+        postings_lists: Postings lists for all word types
+        collection_size: Number of documents in the collection
     """
     # { word_type : [ (doc_id, n_wt), ... ] } # Tuples of docIDs and normalized term frequency weights
     postings_lists = {} 
@@ -97,10 +104,9 @@ def create_postings_lists(in_dir):
             line_num += 1
             line = linecache.getline(file_path, line_num)
 
-        doc_length = get_document_vector_length(doc_tfs)
 
         # Add doc ID and weights to postings list
-        add_doc_tf_to_postings(doc_id, doc_tfs, doc_length, postings_lists)
+        add_doc_tf_to_postings(doc_id, doc_tfs, postings_lists)
 
 
     collection_size = len(files) # Total number of documents in the collection
@@ -114,16 +120,12 @@ def write_index_to_disk(postings_lists, collection_size, out_dict, out_postings)
 
     Input:
         postings_lists: { word_type: [ (doc_id, n_wt), ... ] }
-        collection_size: N
-        out_dict: output file for dictionary
-        out_postings: output file for postings lists
+        collection_size: Total number of documents, N
+        out_dict: Output file for dictionary
+        out_postings: Output file for postings lists
     """
-    # { 
-    #   word_type : (
-    #       idf,          # Inverse document frequency
-    #       offset_bytes  # Position offset from start of postings file
-    #   ) 
-    # } 
+    # { word_type : (idf, offset_bytes) } 
+    # Inverse document frequency, and Position offset from start of postings file
     dictionary = {} 
 
     # Write postings lists to output file, and create the dictionary
