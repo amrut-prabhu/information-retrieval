@@ -9,6 +9,9 @@ import os
 import linecache
 import _pickle as pickle
 
+from dictionary import Dictionary
+from postings_lists import PostingsLists
+
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
 
@@ -17,6 +20,12 @@ def get_sorted_file_names(in_dir):
     """
     Returns the list of file names of the documents to be indexed, sorted by their document IDs.
     In this case, the file name acts as the document ID.
+
+    Input:
+        in_dir:
+
+    Output:
+        files:
     """
     # Convert file names to int to sort in natural numerical order
     files = [int(f) for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
@@ -29,12 +38,20 @@ def create_postings_lists(in_dir):
     """
     Returns the postings lists created from the documents in `in_dir`.
     Applies sentence and word level tokenisation, stemming and case folding.
+
+    Input:
+        in_dir:
+
+    Output:
+        postings_lists:
+        document_lengths: 
+        collection_size:
     """
-    # { word_type : [ docID, ... ] }
+    # { word_type : [ (doc_id, term_freq), ... ] }
     postings_lists = {} 
 
-    ALL_DOC_IDS = '## all doc IDs ##' # Special token that has a postings list containing all doc IDs
-    postings_lists[ALL_DOC_IDS] = []
+    # { doc_id: num_words }
+    document_lengths = {}
 
     stemmer = nltk.stem.porter.PorterStemmer()
     files = get_sorted_file_names(in_dir) # Get sorted names, since postings list should have sorted doc IDs
@@ -42,7 +59,7 @@ def create_postings_lists(in_dir):
     for docID in files:
         file_path = os.path.join(in_dir, str(docID))
 
-        postings_lists[ALL_DOC_IDS].append(docID)
+        doc_length = 0
 
         line_num = 1
         line = linecache.getline(file_path, line_num)
@@ -53,26 +70,49 @@ def create_postings_lists(in_dir):
                     # Apply stemming and case folding after tokenization
                     stemmed_word_token = stemmer.stem(word_token).lower()
 
+                    doc_length += 1
+
+                    # Add doc ID to postings list
                     if stemmed_word_token not in postings_lists:
                         postings_lists[stemmed_word_token] = []
-                    
-                    # Add doc ID to postings list
+
                     postings = postings_lists[stemmed_word_token]
-                    if (len(postings) == 0 or postings[-1] != docID):
-                        postings.append(docID)
+
+                    if (len(postings) == 0 or postings[-1][0] != docID):
+                        postings.append((docID, 1))
+                    else: # postings[-1][0] == docID
+                        postings[-1] = (docID, postings[-1][1] + 1)
 
             line_num += 1
             line = linecache.getline(file_path, line_num)
-    
-    return postings_lists
 
+        document_lengths[docID] = compute_doc_length(docID)
+
+    collection_size = len(files) # Total number of documents in the collection
+
+    return postings_lists, document_lengths, collection_size
+
+
+def log10(x):
+    if x == 0:
+        return 0
+    
+    return math.log(x, 10)
 
 def write_postings_list(postings_list, f):
     """
     Returns the size of the stringified postings list written to the file.
 
     eg. [1, 2, 5, 21] gets stringified to "1,2,5,21 " and returns 9.
+
+    Input:
+        postings_list:
+        f:
+
+    Output:
+
     """
+    # TODO: use pickle dump
     postings_list_str = ','.join([str(docID) for docID in postings_list]) + ' '
 
     f.write(postings_list_str)
@@ -80,16 +120,24 @@ def write_postings_list(postings_list, f):
     return len(postings_list_str)
 
 
-def write_index_to_disk(postings_lists, out_dict, out_postings):
+def process_and_write_index_to_disk(postings_lists, document_lengths, out_dict, out_postings):
     """
     Writes the postings lists and the in-memory dictionary to the output files.
+
+    Input:
+        postings_lists: 
+        document_lengths: 
+        out_dict:
+        out_postings:
+
+    Output:
+        None
     """
     # { 
     #   word_type : (
-    #       num_docs,     # Number of documents containing this word
+    #       doc_freq,     # Number of documents containing this word, i.e., document frequency
     #       offset_bytes, # Position offset from start of postings file
-    #       size_bytes,   # Size of postings list written for this word
-    #       skip_len      # Number of skips performed by skip pointer
+    #       size_bytes   # Size of postings list written for this word
     #   ) 
     # } 
     dictionary = {} 
@@ -99,19 +147,24 @@ def write_index_to_disk(postings_lists, out_dict, out_postings):
 
     offset = 0 # Number of bytes that have been written to file
     for word in postings_lists:
-        num_docs = len(postings_lists[word])
-        skip_len = int(math.sqrt(num_docs)) # Heuristic for evenly-spaced skip pointers
+        doc_freq = len(postings_lists[word])
+        idf = log()
 
         size_bytes = write_postings_list(postings_lists[word], f)
 
-        dictionary[word] = (num_docs, offset, size_bytes, skip_len)
+        dictionary[word] = (doc_freq, offset, size_bytes)
         offset += size_bytes
 
     f.close()
 
-    # Write dictionary to output file
+    # Write dictionary and documentlengths to output file
+    d = { 
+        'document_lengths': document_lengths, # TODO:
+        'dictionary': dictionary
+    }
+    
     f = open(out_dict, 'wb')
-    pickle.dump(dictionary, f)
+    pickle.dump(d, f)
     f.close()
 
 
@@ -122,9 +175,9 @@ def build_index(in_dir, out_dict, out_postings):
     """
     print('indexing...')
 
-    postings_lists = create_postings_lists(in_dir)
+    postings_lists, document_lengths, collection_size = create_postings_lists(in_dir)
 
-    write_index_to_disk(postings_lists, out_dict, out_postings)
+    process_and_write_index_to_disk(postings_lists, document_lengths, out_dict, out_postings)
 
 
 input_directory = output_file_dictionary = output_file_postings = None
