@@ -77,7 +77,5 @@ This may come at the cost of more time taken during searching, but this may be o
 - Google, StackOverflow, GeeksForGeeks, Python docs: for Python syntax and errors
 - NLTK documentation (https://www.nltk.org/api/nltk.tokenize.html): usage of functions like tokenize, PorterStemmer
 - linecache documentation (https://docs.python.org/3/library/linecache.html): usage of getline function
-- Shunting Yard algorithm (https://en.wikipedia.org/wiki/Shunting-yard_algorithm): to parse the boolean queries
-- Evaluating Reverse Polish Notation (https://en.wikipedia.org/wiki/Reverse_Polish_notation#Postfix_evaluation_algorithm): to evaluate the search query in Reverse Polish Notation form
-- Introduction to Information Retrieval textbook: for size of the skip pointers and how to use it in the merging algorithm for postings lists
-- NUS CS3245 Luminus forum: for sample queries and expected outputs
+- Introduction to Information Retrieval textbook: for scoring algorithm
+- NUS CS3245 Luminus forum: for sample queries and outputs, clarifications about the score computation
