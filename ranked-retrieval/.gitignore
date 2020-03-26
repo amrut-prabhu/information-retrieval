@@ -1,5 +1,5 @@
 *_temp.txt
-output.txt
+output*.txt
 *.json
 postings_order.txt
 postings.json
