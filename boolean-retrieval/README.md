@@ -33,10 +33,6 @@ python search.py -d dictionary.txt -p postings.txt -q sample_queries.txt -o outp
 
 ## General Notes
 
-Give an overview of your program, describe the important algorithms/steps 
-in your program, and discuss your experiments in general.  A few paragraphs 
-are usually sufficient.
-
 ### Indexing phase
 
 There are 2 parts for the indexing phase - creating the postings lists for all words, and using it to create a dictionary these that can be stored in memory.
