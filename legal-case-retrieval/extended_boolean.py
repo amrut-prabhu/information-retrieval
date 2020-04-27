@@ -5,7 +5,8 @@ from postingsfile import PostingsFile
 
 def extended_boolean_p_norm_model(query, query_term_weights, document_term_weights):
     """
-    http://dns.uls.cl/~ej/daa_08/Algoritmos/books/book5/chap15.htm
+    Returns search results for the boolean AND query, by using the P-norm Extended Boolean model as
+    described in http://dns.uls.cl/~ej/daa_08/Algoritmos/books/book5/chap15.htm
 
     Params:
         - query: boolean query string tokens. Eg. ['"fertility treatment"', 'damages', '"medicine "', 'sick']
@@ -13,7 +14,7 @@ def extended_boolean_p_norm_model(query, query_term_weights, document_term_weigh
         - document_term_weights: Document weights for terms d_i. defaultdict of defaultdicts. { docID: { term: doc_term_weight } }
     
     Returns:
-        - search_results: Document IDs sorted by relevance [ docID, ... ]
+        - search_results: Document IDs and query-doc similarities sorted by relevance [(docID, similarity), ...]
     """
     P = 1 # Operator coefficient p-value to indicate the degree of strictness
     document_values = defaultdict(lambda: {'numerator': 0.0, 'denominator': 0.0})
@@ -37,6 +38,5 @@ def extended_boolean_p_norm_model(query, query_term_weights, document_term_weigh
 
     # Sort documents from highest to lowest similarities
     search_results = sorted(document_similarities, key=lambda x: x[1], reverse=True)
-    # search_results = [doc[0] for doc in search_results]
-    # [(docID, similarity), ...]
+    
     return search_results
