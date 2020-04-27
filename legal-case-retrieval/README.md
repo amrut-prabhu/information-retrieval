@@ -62,7 +62,7 @@ Format of `dictionary.txt`:
 
 Format of positional index postings list of a term in `postings.txt`: 
 ```
-docID1#tf1#pos1,pos2,pos3 docID2#tf2#pos1,pos2
+docID1#pos1,pos2,pos3 docID2#pos1,pos2
 ```
 
 ### Searching:
