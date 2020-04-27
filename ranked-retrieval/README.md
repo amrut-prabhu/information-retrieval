@@ -38,7 +38,7 @@ python search.py -d dictionary.txt -p postings.txt -q sample_queries1.txt -o out
 There are 2 parts for the indexing phase - creating the postings lists for all words, and using it to create a dictionary these that can be stored in memory.
 
 1. For each document, the term frequencies are computed after tokenization, stemming and case folding.
-This information is then added to the postings lists of the corresponding words as (doc ID, normalized log term frequency). 
+This information is then added to the postings lists of the corresponding words as `(doc ID, normalized log term frequency)`. 
 These are the tf-idf weights of the term for the document under the lnc.ltc ranking scheme.
 
 2. Next, the postings list of each word is written to a file.
