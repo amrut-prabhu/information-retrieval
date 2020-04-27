@@ -15,7 +15,7 @@ class Posting(object):
 
     def save_postings(self, posting_file):
         """
-        Saves postings as "docID1#tf1#pos1,pos2,pos3 docID2#tf2#pos1,pos2 "
+        Saves postings as "docID1#pos1,pos2,pos3 docID2#pos1,pos2 "
         
         Example: postings = { 
             222: { 'positions': [4,5,6,7,8] }, 
